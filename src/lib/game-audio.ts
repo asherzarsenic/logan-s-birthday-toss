@@ -70,6 +70,23 @@ export const sfx = {
   unlock() {
     ac();
   },
+  powerOn() {
+    // mechanical click of the switch
+    tone("square", 300, 120, 0.05, 0.14);
+    noise(0.06, 0.16, 900, 0.015);
+    // static burst while the tube warms up
+    noise(0.5, 0.16, 3200, 0.1);
+    // low CRT hum rising
+    tone("sawtooth", 55, 130, 1.1, 0.05, 0.12);
+    // little arcade start-up chirp
+    tone("triangle", 660, 660, 0.09, 0.09, 0.75);
+    tone("triangle", 990, 990, 0.14, 0.09, 0.88);
+  },
+  zoom() {
+    // whoosh flying into the screen
+    noise(0.6, 0.22, 1600);
+    tone("sawtooth", 180, 760, 0.5, 0.05);
+  },
   throw() {
     noise(0.22, 0.18, 2600);
     tone("triangle", 900, 260, 0.2, 0.06);

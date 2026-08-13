@@ -3,6 +3,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 
 import { Banner } from "@/components/game/Banner";
 import { Hud } from "@/components/game/Hud";
+import { Intro } from "@/components/game/Intro";
 import { Knife } from "@/components/game/Knife";
 import { WinCard } from "@/components/game/WinCard";
 import { Wheel, type BalloonState, type StuckKnife } from "@/components/game/Wheel";
@@ -36,7 +37,7 @@ const START_LIVES = 3;
 const FLIGHT_MS = 380;
 const BASE_SPEED = 34; // deg / second
 
-type Phase = "title" | "playing" | "lost" | "won";
+type Phase = "intro" | "title" | "playing" | "lost" | "won";
 type Flying = { id: number; x: number; y: number };
 type Burst = { id: number; x: number; y: number };
 
@@ -53,7 +54,7 @@ function makeBalloons(size: number): BalloonState[] {
 function Index() {
   const stageRef = useRef<HTMLDivElement>(null);
   const [size, setSize] = useState(360);
-  const [phase, setPhase] = useState<Phase>("title");
+  const [phase, setPhase] = useState<Phase>("intro");
   const [rotation, setRotation] = useState(0);
   const [balloons, setBalloons] = useState<BalloonState[]>(() => makeBalloons(360));
   const [stuck, setStuck] = useState<StuckKnife[]>([]);
@@ -67,7 +68,6 @@ function Index() {
   const [aim, setAim] = useState<{ x: number; y: number } | null>(null);
   const [mounted, setMounted] = useState(false);
   useEffect(() => setMounted(true), []);
-
 
   const rotRef = useRef(0);
   const speedRef = useRef(BASE_SPEED);
@@ -245,146 +245,147 @@ function Index() {
   const balloonsLeft = balloons.filter((b) => !b.popped).length;
 
   return (
-    <main
-      className="scanlines relative flex min-h-[100dvh] w-full flex-col items-center justify-center overflow-hidden bg-stage px-3 py-4"
-      style={{
-        background:
-          "radial-gradient(ellipse at 50% 42%, color-mix(in oklab, var(--violet) 32%, var(--stage)) 0%, var(--stage) 62%)",
-      }}
-    >
-      <Banner />
-
-      <div className="mt-3 w-full max-w-[560px]">
-        <Hud
-          knivesLeft={knivesLeft}
-          totalKnives={TOTAL_KNIVES}
-          lives={lives}
-          balloonsLeft={balloonsLeft}
-          muted={muted}
-          onToggleMute={() => {
-            const next = !muted;
-            setMutedState(next);
-            setMuted(next);
-          }}
-        />
-      </div>
-
-      <div
-        ref={stageRef}
-        onPointerMove={(e) => setAim(pointFromEvent(e))}
-        onPointerLeave={() => setAim(null)}
-        onPointerDown={(e) => {
-          const p = pointFromEvent(e);
-          setAim(p);
-          throwKnife(p.x, p.y);
+    <>
+      {phase === "intro" && <Intro onEnter={() => setPhase("title")} />}
+      <main
+        className="scanlines relative flex min-h-[100dvh] w-full flex-col items-center justify-center overflow-hidden bg-stage px-3 py-4"
+        style={{
+          background:
+            "radial-gradient(ellipse at 50% 42%, color-mix(in oklab, var(--violet) 32%, var(--stage)) 0%, var(--stage) 62%)",
         }}
-        className="relative mt-4 aspect-square w-full max-w-[520px] cursor-crosshair touch-none select-none"
       >
-        {/* spotlight */}
-        <div
-          className="pointer-events-none absolute inset-0"
-          style={{
-            background:
-              "radial-gradient(circle at 50% 50%, color-mix(in oklab, var(--orange) 18%, transparent) 0%, transparent 62%)",
-          }}
-        />
+        <Banner />
 
-        {mounted && (
-          <Wheel
-            size={size * 0.94}
-            rotation={rotation}
-            balloons={balloons}
-            stuckKnives={stuck}
-            hit={hit}
-            hitKey={hitKey}
-          />
-        )}
-
-
-        {hit && (
-          <div
-            key={hitKey}
-            className="pointer-events-none absolute left-1/2 z-30 -translate-x-1/2"
-            style={{ top: "16%", animation: "shout-in 320ms cubic-bezier(0.2,1.4,0.4,1) both" }}
-          >
-            <div className="rounded-xl border-2 border-neon bg-stage px-3 py-1 font-display text-2xl tracking-widest text-neon text-glow-neon">
-              @#$%!
-            </div>
-            <div className="mx-auto h-0 w-0 border-l-8 border-r-8 border-t-8 border-l-transparent border-r-transparent border-t-neon" />
-          </div>
-        )}
-
-
-        {/* pop bursts */}
-        {bursts.map((b) => (
-          <span
-            key={b.id}
-            className="pointer-events-none absolute rounded-full"
-            style={{
-              left: b.x,
-              top: b.y,
-              width: size * 0.16,
-              height: size * 0.16,
-              marginLeft: -size * 0.08,
-              marginTop: -size * 0.08,
-              border: "3px solid var(--neon)",
-              boxShadow: "0 0 24px var(--neon)",
-              animation: "pop-burst 500ms ease-out forwards",
+        <div className="mt-3 w-full max-w-[560px]">
+          <Hud
+            knivesLeft={knivesLeft}
+            totalKnives={TOTAL_KNIVES}
+            lives={lives}
+            balloonsLeft={balloonsLeft}
+            muted={muted}
+            onToggleMute={() => {
+              const next = !muted;
+              setMutedState(next);
+              setMuted(next);
             }}
           />
-        ))}
+        </div>
 
-        {/* flying knives */}
-        {flying.map((f) => (
-          <FlyingKnife key={f.id} x={f.x} y={f.y} stage={size} />
-        ))}
-
-        {/* crosshair */}
-        {phase === "playing" && aim && (
+        <div
+          ref={stageRef}
+          onPointerMove={(e) => setAim(pointFromEvent(e))}
+          onPointerLeave={() => setAim(null)}
+          onPointerDown={(e) => {
+            const p = pointFromEvent(e);
+            setAim(p);
+            throwKnife(p.x, p.y);
+          }}
+          className="relative mt-4 aspect-square w-full max-w-[520px] cursor-crosshair touch-none select-none"
+        >
+          {/* spotlight */}
           <div
-            className="pointer-events-none absolute z-30"
-            style={{ left: aim.x, top: aim.y, transform: "translate(-50%, -50%)" }}
-          >
-            <div
-              className="rounded-full border-2 border-neon"
-              style={{ width: 26, height: 26, boxShadow: "0 0 12px var(--neon)" }}
+            className="pointer-events-none absolute inset-0"
+            style={{
+              background:
+                "radial-gradient(circle at 50% 50%, color-mix(in oklab, var(--orange) 18%, transparent) 0%, transparent 62%)",
+            }}
+          />
+
+          {mounted && (
+            <Wheel
+              size={size * 0.94}
+              rotation={rotation}
+              balloons={balloons}
+              stuckKnives={stuck}
+              hit={hit}
+              hitKey={hitKey}
             />
-            <div className="absolute left-1/2 top-1/2 h-[2px] w-8 -translate-x-1/2 -translate-y-1/2 bg-neon/70" />
-            <div className="absolute left-1/2 top-1/2 h-8 w-[2px] -translate-x-1/2 -translate-y-1/2 bg-neon/70" />
-          </div>
-        )}
+          )}
 
-        {phase === "title" && (
-          <Overlay
-            kicker="First-person knife throwing"
-            title="Ready, Logan?"
-            body="I'm tied to the wheel. Pop all 8 balloons with 10 knives — and try very hard not to hit me. Tap or click to throw."
-            cta="Start throwing"
-            onClick={reset}
-          />
-        )}
+          {hit && (
+            <div
+              key={hitKey}
+              className="pointer-events-none absolute left-1/2 z-30 -translate-x-1/2"
+              style={{ top: "16%", animation: "shout-in 320ms cubic-bezier(0.2,1.4,0.4,1) both" }}
+            >
+              <div className="rounded-xl border-2 border-neon bg-stage px-3 py-1 font-display text-2xl tracking-widest text-neon text-glow-neon">
+                @#$%!
+              </div>
+              <div className="mx-auto h-0 w-0 border-l-8 border-r-8 border-t-8 border-l-transparent border-r-transparent border-t-neon" />
+            </div>
+          )}
 
-        {phase === "lost" && (
-          <Overlay
-            kicker={lives <= 0 ? "You hit me. Three times." : "Out of knives"}
-            title="Ouch. Try again"
-            body={
-              lives <= 0
-                ? "That's it, I'm telling everyone at the party."
-                : `${balloonsLeft} balloon${balloonsLeft === 1 ? "" : "s"} still standing. Reload and take another run.`
-            }
-            cta="Retry"
-            onClick={reset}
-          />
-        )}
+          {/* pop bursts */}
+          {bursts.map((b) => (
+            <span
+              key={b.id}
+              className="pointer-events-none absolute rounded-full"
+              style={{
+                left: b.x,
+                top: b.y,
+                width: size * 0.16,
+                height: size * 0.16,
+                marginLeft: -size * 0.08,
+                marginTop: -size * 0.08,
+                border: "3px solid var(--neon)",
+                boxShadow: "0 0 24px var(--neon)",
+                animation: "pop-burst 500ms ease-out forwards",
+              }}
+            />
+          ))}
 
-        {phase === "won" && <WinCard onReplay={reset} />}
-      </div>
+          {/* flying knives */}
+          {flying.map((f) => (
+            <FlyingKnife key={f.id} x={f.x} y={f.y} stage={size} />
+          ))}
 
-      <p className="mt-4 max-w-[520px] text-center font-hud text-[10px] uppercase tracking-[0.3em] text-muted-foreground">
-        Made with love, glitter and mild personal risk
-      </p>
-    </main>
+          {/* crosshair */}
+          {phase === "playing" && aim && (
+            <div
+              className="pointer-events-none absolute z-30"
+              style={{ left: aim.x, top: aim.y, transform: "translate(-50%, -50%)" }}
+            >
+              <div
+                className="rounded-full border-2 border-neon"
+                style={{ width: 26, height: 26, boxShadow: "0 0 12px var(--neon)" }}
+              />
+              <div className="absolute left-1/2 top-1/2 h-[2px] w-8 -translate-x-1/2 -translate-y-1/2 bg-neon/70" />
+              <div className="absolute left-1/2 top-1/2 h-8 w-[2px] -translate-x-1/2 -translate-y-1/2 bg-neon/70" />
+            </div>
+          )}
+
+          {phase === "title" && (
+            <Overlay
+              kicker="First-person knife throwing"
+              title="Ready, Logan?"
+              body="I'm tied to the wheel. Pop all 8 balloons with 10 knives — and try very hard not to hit me. Tap or click to throw."
+              cta="Start throwing"
+              onClick={reset}
+            />
+          )}
+
+          {phase === "lost" && (
+            <Overlay
+              kicker={lives <= 0 ? "You hit me. Three times." : "Out of knives"}
+              title="Ouch. Try again"
+              body={
+                lives <= 0
+                  ? "That's it, I'm telling everyone at the party."
+                  : `${balloonsLeft} balloon${balloonsLeft === 1 ? "" : "s"} still standing. Reload and take another run.`
+              }
+              cta="Retry"
+              onClick={reset}
+            />
+          )}
+
+          {phase === "won" && <WinCard onReplay={reset} />}
+        </div>
+
+        <p className="mt-4 max-w-[520px] text-center font-hud text-[10px] uppercase tracking-[0.3em] text-muted-foreground">
+          Made with love, glitter and mild personal risk
+        </p>
+      </main>
+    </>
   );
 }
 
@@ -432,7 +433,9 @@ function Overlay({
         <h2 className="mt-2 font-display text-4xl uppercase leading-none tracking-wide text-orange text-glow-orange">
           {title}
         </h2>
-        <p className="mx-auto mt-3 max-w-xs text-sm leading-relaxed text-muted-foreground">{body}</p>
+        <p className="mx-auto mt-3 max-w-xs text-sm leading-relaxed text-muted-foreground">
+          {body}
+        </p>
         <button
           type="button"
           onClick={onClick}

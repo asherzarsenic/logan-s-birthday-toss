@@ -12,4 +12,10 @@ export default defineConfig({
     // nitro/vite builds from this
     server: { entry: "server" },
   },
+  vite: {
+    server: {
+      // Allow the sandbox preview proxy hosts (e.g. https://8080-<id>.e2b.app).
+      allowedHosts: [".e2b.app", ".e2b.dev"],
+    },
+  },
 });
