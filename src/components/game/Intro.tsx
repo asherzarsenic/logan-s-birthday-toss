@@ -708,7 +708,7 @@ function BootScreen({ size, stage }: { size: number; stage: BootStage }) {
               marginTop: size * 0.05,
             }}
           >
-            8 balloons · 10 knives · don&apos;t hit me
+            3 levels · 3 challenges · don&apos;t hit me
           </p>
           <p
             className="font-hud uppercase"

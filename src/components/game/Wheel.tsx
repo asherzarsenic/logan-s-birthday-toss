@@ -12,6 +12,7 @@ export function Wheel({
   stuckKnives,
   hit,
   hitKey,
+  balloonScale = 1,
 }: {
   size: number;
   rotation: number;
@@ -19,9 +20,10 @@ export function Wheel({
   stuckKnives: StuckKnife[];
   hit: boolean;
   hitKey: number;
+  balloonScale?: number;
 }) {
   const c = size / 2;
-  const balloonSize = size * 0.13;
+  const balloonSize = size * 0.13 * balloonScale;
 
   const polar = (angle: number, radius: number) => {
     const rad = (angle * Math.PI) / 180;
@@ -106,7 +108,6 @@ export function Wheel({
       >
         <Character size={size * 0.36} hit={hit} hitKey={hitKey} />
       </div>
-
     </div>
   );
 }

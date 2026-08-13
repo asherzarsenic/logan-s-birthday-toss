@@ -2,6 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useCallback, useEffect, useRef, useState } from "react";
 
 import { Banner } from "@/components/game/Banner";
+import { ChallengeStrip, LevelClear, type ChallengeResults } from "@/components/game/Challenges";
 import { Hud } from "@/components/game/Hud";
 import { Intro } from "@/components/game/Intro";
 import { Knife } from "@/components/game/Knife";
@@ -16,13 +17,13 @@ export const Route = createFileRoute("/")({
       {
         name: "description",
         content:
-          "An interactive birthday card for Logan: a first-person knife throwing game. Pop every balloon on the spinning wheel without hitting the girl tied to it.",
+          "An interactive birthday card for Logan: a first-person knife throwing game. Three levels, three challenges, one spinning wheel — pop every balloon without hitting the girl tied to it.",
       },
       { property: "og:title", content: "Knife Throw: Happy Birthday, Logan" },
       {
         property: "og:description",
         content:
-          "Ten knives, eight balloons, one spinning wheel. Pop them all to unlock the birthday message.",
+          "Three levels, three challenges, one spinning wheel. Pop them all to unlock the birthday message.",
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
@@ -31,21 +32,73 @@ export const Route = createFileRoute("/")({
   component: Index,
 });
 
-const BALLOON_COUNT = 8;
-const TOTAL_KNIVES = 10;
-const START_LIVES = 3;
 const FLIGHT_MS = 380;
-const BASE_SPEED = 34; // deg / second
 
-type Phase = "intro" | "title" | "playing" | "lost" | "won";
+type Level = {
+  name: string;
+  balloons: number;
+  knives: number;
+  lives: number;
+  speed: number; // deg / second
+  speedUp: number; // added every 3 balloons popped
+  dir: 1 | -1; // spin direction (level 2 reverses it)
+  balloonScale: number; // smaller balloons = harder to hit
+  herHit: number; // her hitbox as a fraction of the stage
+};
+
+const LEVELS: Level[] = [
+  {
+    name: "Warm Up",
+    balloons: 8,
+    knives: 10,
+    lives: 3,
+    speed: 34,
+    speedUp: 16,
+    dir: 1,
+    balloonScale: 1,
+    herHit: 0.15,
+  },
+  {
+    name: "Getting Spicy",
+    balloons: 9,
+    knives: 10,
+    lives: 2,
+    speed: 50,
+    speedUp: 18,
+    dir: -1,
+    balloonScale: 0.92,
+    herHit: 0.16,
+  },
+  {
+    name: "Bunny Mode",
+    balloons: 10,
+    knives: 10,
+    lives: 1,
+    speed: 64,
+    speedUp: 20,
+    dir: 1,
+    balloonScale: 0.84,
+    herHit: 0.17,
+  },
+];
+
+function getLevel(idx: number): Level {
+  const lvl = LEVELS[idx];
+  if (!lvl) throw new Error(`Unknown level ${idx}`);
+  return lvl;
+}
+
+const FIRST_LEVEL = getLevel(0);
+
+type Phase = "intro" | "title" | "playing" | "lost" | "level-clear" | "won";
 type Flying = { id: number; x: number; y: number };
 type Burst = { id: number; x: number; y: number };
 
-function makeBalloons(size: number): BalloonState[] {
+function makeBalloons(size: number, count: number): BalloonState[] {
   const radius = size * 0.375;
-  return Array.from({ length: BALLOON_COUNT }, (_, i) => ({
+  return Array.from({ length: count }, (_, i) => ({
     id: i,
-    angle: (360 / BALLOON_COUNT) * i,
+    angle: (360 / count) * i,
     radius,
     popped: false,
   }));
@@ -55,13 +108,20 @@ function Index() {
   const stageRef = useRef<HTMLDivElement>(null);
   const [size, setSize] = useState(360);
   const [phase, setPhase] = useState<Phase>("intro");
+  const [levelIndex, setLevelIndex] = useState(0);
   const [rotation, setRotation] = useState(0);
-  const [balloons, setBalloons] = useState<BalloonState[]>(() => makeBalloons(360));
+  const [balloons, setBalloons] = useState<BalloonState[]>(() =>
+    makeBalloons(360, FIRST_LEVEL.balloons),
+  );
   const [stuck, setStuck] = useState<StuckKnife[]>([]);
   const [flying, setFlying] = useState<Flying[]>([]);
   const [bursts, setBursts] = useState<Burst[]>([]);
-  const [knivesLeft, setKnivesLeft] = useState(TOTAL_KNIVES);
-  const [lives, setLives] = useState(START_LIVES);
+  const [knivesLeft, setKnivesLeft] = useState(FIRST_LEVEL.knives);
+  const [lives, setLives] = useState(FIRST_LEVEL.lives);
+  const [misses, setMisses] = useState(0);
+  const [streak, setStreak] = useState(0);
+  const [bestStreak, setBestStreak] = useState(0);
+  const [mastered, setMastered] = useState(0);
   const [hit, setHit] = useState(false);
   const [hitKey, setHitKey] = useState(0);
   const [muted, setMutedState] = useState(false);
@@ -70,14 +130,28 @@ function Index() {
   useEffect(() => setMounted(true), []);
 
   const rotRef = useRef(0);
-  const speedRef = useRef(BASE_SPEED);
+  const speedRef = useRef(FIRST_LEVEL.speed);
+  const dirRef = useRef<1 | -1>(1);
   const phaseRef = useRef<Phase>("title");
   const balloonsRef = useRef(balloons);
+  const levelRef = useRef(FIRST_LEVEL);
+  const levelIndexRef = useRef(0);
+  const livesRef = useRef(FIRST_LEVEL.lives);
+  const missesRef = useRef(0);
+  const streakRef = useRef(0);
+  const bestStreakRef = useRef(0);
+  const clearedRef = useRef(false);
   const idRef = useRef(1);
   const inFlightRef = useRef(0);
+  const onClearedRef = useRef<() => void>(() => {});
 
   phaseRef.current = phase;
+  levelRef.current = getLevel(levelIndex);
+  levelIndexRef.current = levelIndex;
+  livesRef.current = lives;
   balloonsRef.current = balloons;
+
+  const level = getLevel(levelIndex);
 
   /* measure stage */
   useEffect(() => {
@@ -91,7 +165,11 @@ function Index() {
   }, []);
 
   useEffect(() => {
-    if (phase === "title") setBalloons(makeBalloons(size));
+    if (phase === "title") {
+      const next = makeBalloons(size, FIRST_LEVEL.balloons);
+      balloonsRef.current = next;
+      setBalloons(next);
+    }
   }, [size, phase]);
 
   /* game loop */
@@ -103,7 +181,7 @@ function Index() {
       last = now;
       const spinning = phaseRef.current === "playing" || phaseRef.current === "title";
       if (spinning) {
-        rotRef.current = (rotRef.current + speedRef.current * dt) % 360;
+        rotRef.current = (rotRef.current + dirRef.current * speedRef.current * dt) % 360;
         setRotation(rotRef.current);
       }
       raf = requestAnimationFrame(tick);
@@ -112,19 +190,50 @@ function Index() {
     return () => cancelAnimationFrame(raf);
   }, []);
 
-  const reset = useCallback(() => {
-    setBalloons(makeBalloons(size));
-    setStuck([]);
-    setFlying([]);
-    setBursts([]);
-    setKnivesLeft(TOTAL_KNIVES);
-    setLives(START_LIVES);
-    setHit(false);
-    speedRef.current = BASE_SPEED;
-    inFlightRef.current = 0;
-    setPhase("playing");
-    sfx.unlock();
-  }, [size]);
+  const startLevel = useCallback(
+    (idx: number) => {
+      const cfg = getLevel(idx);
+      const next = makeBalloons(size, cfg.balloons);
+      balloonsRef.current = next;
+      setLevelIndex(idx);
+      setBalloons(next);
+      setStuck([]);
+      setFlying([]);
+      setBursts([]);
+      setKnivesLeft(cfg.knives);
+      setLives(cfg.lives);
+      setMisses(0);
+      setStreak(0);
+      setBestStreak(0);
+      setHit(false);
+      speedRef.current = cfg.speed;
+      dirRef.current = cfg.dir;
+      livesRef.current = cfg.lives;
+      missesRef.current = 0;
+      streakRef.current = 0;
+      bestStreakRef.current = 0;
+      clearedRef.current = false;
+      inFlightRef.current = 0;
+      setPhase("playing");
+      sfx.unlock();
+    },
+    [size],
+  );
+
+  const onCleared = useCallback(() => {
+    if (clearedRef.current) return;
+    clearedRef.current = true;
+    const earned =
+      (levelRef.current.lives - livesRef.current === 0 ? 1 : 0) +
+      (missesRef.current === 0 ? 1 : 0) +
+      (bestStreakRef.current >= 3 ? 1 : 0);
+    setMastered((m) => m + earned);
+    sfx.win();
+    const isLast = levelIndexRef.current === LEVELS.length - 1;
+    window.setTimeout(() => setPhase(isLast ? "won" : "level-clear"), 700);
+  }, []);
+
+  onClearedRef.current = onCleared;
 
   const resolveThrow = useCallback(
     (x: number, y: number) => {
@@ -134,9 +243,10 @@ function Index() {
       const dist = Math.hypot(dx, dy);
       const screenAngle = (Math.atan2(dy, dx) * 180) / Math.PI;
       const localAngle = screenAngle - rotRef.current;
+      const cfg = levelRef.current;
 
       // did it hit a balloon?
-      const hitRadius = size * 0.1;
+      const hitRadius = size * 0.1 * cfg.balloonScale;
       let poppedId: number | null = null;
       const current = balloonsRef.current;
       for (const b of current) {
@@ -158,38 +268,50 @@ function Index() {
         const burstId = idRef.current++;
         setBursts((b) => [...b, { id: burstId, x, y }]);
         setTimeout(() => setBursts((b) => b.filter((v) => v.id !== burstId)), 520);
-        setBalloons((prev) => {
-          const next = prev.map((b) => (b.id === poppedId ? { ...b, popped: true } : b));
-          const left = next.filter((b) => !b.popped).length;
-          const popped = BALLOON_COUNT - left;
-          speedRef.current = BASE_SPEED + Math.floor(popped / 3) * 16;
-          if (left === 0) {
-            speedRef.current = 0;
-            sfx.win();
-            setTimeout(() => setPhase("won"), 700);
-          }
-          return next;
-        });
+
+        const next = current.map((b) => (b.id === poppedId ? { ...b, popped: true } : b));
+        balloonsRef.current = next;
+        setBalloons(next);
+
+        // streak
+        streakRef.current += 1;
+        if (streakRef.current > bestStreakRef.current) bestStreakRef.current = streakRef.current;
+        setStreak(streakRef.current);
+        setBestStreak(bestStreakRef.current);
+
+        const left = next.filter((b) => !b.popped).length;
+        const popped = next.length - left;
+        speedRef.current = cfg.speed + Math.floor(popped / 3) * cfg.speedUp;
+        if (left === 0) {
+          speedRef.current = 0;
+          onClearedRef.current();
+        }
         return;
       }
 
       // did it hit her?
-      if (dist < size * 0.15) {
+      if (dist < size * cfg.herHit) {
         sfx.thunk();
         sfx.beep();
         setHit(true);
         setHitKey((k) => k + 1);
         setTimeout(() => setHit(false), 1200);
-        setLives((l) => {
-          const next = l - 1;
-          if (next <= 0) {
-            sfx.lose();
-            setTimeout(() => setPhase("lost"), 600);
-          }
-          return next;
-        });
+        streakRef.current = 0;
+        setStreak(0);
+        livesRef.current -= 1;
+        setLives(livesRef.current);
+        missesRef.current += 1;
+        setMisses(missesRef.current);
+        if (livesRef.current <= 0) {
+          sfx.lose();
+          setTimeout(() => setPhase("lost"), 600);
+        }
       } else {
         sfx.thunk();
+        missesRef.current += 1;
+        setMisses(missesRef.current);
+        streakRef.current = 0;
+        setStreak(0);
       }
 
       if (dist < size * 0.47) {
@@ -243,6 +365,12 @@ function Index() {
   };
 
   const balloonsLeft = balloons.filter((b) => !b.popped).length;
+  const cleared = phase === "level-clear" || phase === "won";
+  const statuses: ChallengeResults = {
+    flawless: level.lives - lives > 0 ? "failed" : cleared ? "done" : "pending",
+    sharpshooter: misses > 0 ? "failed" : cleared ? "done" : "pending",
+    combo: bestStreak >= 3 ? "done" : "pending",
+  };
 
   return (
     <>
@@ -258,9 +386,14 @@ function Index() {
 
         <div className="mt-3 w-full max-w-[560px]">
           <Hud
+            levelIndex={levelIndex}
+            levelCount={LEVELS.length}
+            levelName={level.name}
+            streak={streak}
             knivesLeft={knivesLeft}
-            totalKnives={TOTAL_KNIVES}
+            totalKnives={level.knives}
             lives={lives}
+            maxLives={level.lives}
             balloonsLeft={balloonsLeft}
             muted={muted}
             onToggleMute={() => {
@@ -270,6 +403,8 @@ function Index() {
             }}
           />
         </div>
+
+        <ChallengeStrip statuses={statuses} />
 
         <div
           ref={stageRef}
@@ -299,6 +434,7 @@ function Index() {
               stuckKnives={stuck}
               hit={hit}
               hitKey={hitKey}
+              balloonScale={level.balloonScale}
             />
           )}
 
@@ -358,15 +494,19 @@ function Index() {
             <Overlay
               kicker="First-person knife throwing"
               title="Ready, Logan?"
-              body="I'm tied to the wheel. Pop all 8 balloons with 10 knives — and try very hard not to hit me. Tap or click to throw."
+              body="You got this babe, I know you do. JUST DONT HIT ME! -Love Ya ♥"
               cta="Start throwing"
-              onClick={reset}
+              onClick={() => startLevel(0)}
             />
           )}
 
           {phase === "lost" && (
             <Overlay
-              kicker={lives <= 0 ? "You hit me. Three times." : "Out of knives"}
+              kicker={
+                lives <= 0
+                  ? `You hit me ${level.lives} time${level.lives === 1 ? "" : "s"}.`
+                  : "Out of knives"
+              }
               title="Ouch. Try again"
               body={
                 lives <= 0
@@ -374,15 +514,35 @@ function Index() {
                   : `${balloonsLeft} balloon${balloonsLeft === 1 ? "" : "s"} still standing. Reload and take another run.`
               }
               cta="Retry"
-              onClick={reset}
+              onClick={() => startLevel(levelIndex)}
             />
           )}
 
-          {phase === "won" && <WinCard onReplay={reset} />}
+          {phase === "level-clear" && (
+            <LevelClear
+              levelIndex={levelIndex}
+              levelCount={LEVELS.length}
+              levelName={level.name}
+              statuses={statuses}
+              onNext={() => startLevel(levelIndex + 1)}
+            />
+          )}
+
+          {phase === "won" && (
+            <WinCard
+              onReplay={() => {
+                setMastered(0);
+                startLevel(0);
+              }}
+              levelCount={LEVELS.length}
+              mastered={mastered}
+              totalChallenges={LEVELS.length * 3}
+            />
+          )}
         </div>
 
         <p className="mt-4 max-w-[520px] text-center font-hud text-[10px] uppercase tracking-[0.3em] text-muted-foreground">
-          Made with love, glitter and mild personal risk
+          Love forever. Your Bunny Pumpkin
         </p>
       </main>
     </>
