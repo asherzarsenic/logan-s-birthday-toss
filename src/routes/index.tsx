@@ -246,7 +246,7 @@ function Index() {
 
   return (
     <main
-      className="scanlines relative flex min-h-[100dvh] w-full flex-col items-center overflow-hidden bg-stage px-3 py-4"
+      className="scanlines relative flex min-h-[100dvh] w-full flex-col items-center justify-center overflow-hidden bg-stage px-3 py-4"
       style={{
         background:
           "radial-gradient(ellipse at 50% 42%, color-mix(in oklab, var(--violet) 32%, var(--stage)) 0%, var(--stage) 62%)",
