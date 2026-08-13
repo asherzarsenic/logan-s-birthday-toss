@@ -1,0 +1,1302 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<title>Code Cracking Lock Picker</title>
+<meta name="description" content="A four-lock arcade of cipher breaking and combinatorial strategy. Crack every lock, assemble the message." />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet" />
+<style>
+/* ============================================================
+   CODE CRACKING LOCK PICKER — brutalist / neon violet
+   ============================================================ */
+:root{
+  --void:#08060d;
+  --deep:#0b0812;
+  --panel:#100b1a;
+  --panel-2:#150f22;
+  --edge:#2a1f3f;
+  --edge-2:#3a2a58;
+  --violet:#b14bff;
+  --violet-2:#8b2ff5;
+  --violet-dim:#5a2a8f;
+  --ink:#efe9fb;
+  --mute:#8d80a9;
+  --dim:#5f5478;
+  --red:#ff3d6e;
+  --amber:#ffb02e;
+  --ok:#41f0b6;
+  --mono:"JetBrains Mono",ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+  --disp:"Space Grotesk","Helvetica Neue",Arial,sans-serif;
+  --shadow:8px 8px 0 rgba(0,0,0,.55);
+  --glow:0 0 24px rgba(177,75,255,.35);
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%}
+html{-webkit-text-size-adjust:100%}
+body{
+  background:var(--void);
+  color:var(--ink);
+  font-family:var(--mono);
+  font-size:15px;
+  line-height:1.45;
+  -webkit-font-smoothing:antialiased;
+  overflow-x:hidden;
+}
+body::before{
+  content:"";position:fixed;inset:0;pointer-events:none;z-index:1;
+  background:
+    radial-gradient(900px 480px at 12% -10%,rgba(139,47,245,.18),transparent 60%),
+    radial-gradient(700px 420px at 105% 5%,rgba(177,75,255,.12),transparent 62%),
+    repeating-linear-gradient(to bottom,rgba(255,255,255,.022) 0 1px,transparent 1px 3px);
+}
+::selection{background:var(--violet);color:#0a0610}
+button{font:inherit;color:inherit;background:none;border:none;cursor:pointer}
+h1,h2,h3{font-family:var(--disp);font-weight:700;letter-spacing:-.02em;line-height:1.05}
+
+.app{position:relative;z-index:2;max-width:1180px;margin:0 auto;padding:26px 20px 60px}
+
+/* ---------- header ---------- */
+.hdr{
+  display:flex;flex-wrap:wrap;gap:18px;align-items:flex-start;justify-content:space-between;
+  border:2px solid var(--edge);background:linear-gradient(160deg,var(--panel),#0c0814);
+  box-shadow:var(--shadow);padding:18px 20px;position:relative;overflow:hidden;
+}
+.hdr::after{content:"";position:absolute;left:0;top:0;bottom:0;width:6px;background:var(--violet);box-shadow:var(--glow)}
+.brand{display:flex;gap:16px;align-items:center;padding-left:8px}
+.mark{
+  width:54px;height:54px;flex:none;display:grid;place-items:center;font-size:26px;
+  border:2px solid var(--violet);color:var(--violet);background:#0d0817;
+  box-shadow:inset 0 0 22px rgba(177,75,255,.25),4px 4px 0 rgba(177,75,255,.18);
+  animation:mark-pulse 3.6s ease-in-out infinite;
+}
+@keyframes mark-pulse{0%,100%{box-shadow:inset 0 0 22px rgba(177,75,255,.25),4px 4px 0 rgba(177,75,255,.18)}50%{box-shadow:inset 0 0 34px rgba(177,75,255,.45),4px 4px 0 rgba(177,75,255,.3)}}
+h1.title{font-size:clamp(19px,3.4vw,29px);text-transform:uppercase}
+h1.title span{color:var(--violet);text-shadow:0 0 18px rgba(177,75,255,.55)}
+.sub{font-size:10.5px;letter-spacing:.32em;color:var(--mute);text-transform:uppercase;margin-top:6px}
+.hdr-right{display:flex;flex-direction:column;gap:12px;align-items:flex-end}
+.keys{display:flex;gap:7px;align-items:center}
+.key{
+  width:26px;height:34px;border:2px solid var(--edge-2);background:#0c0814;position:relative;
+  display:grid;place-items:center;font-size:13px;color:var(--dim);
+}
+.key.on{border-color:var(--violet);color:var(--violet);background:#170c26;box-shadow:0 0 16px rgba(177,75,255,.45),inset 0 0 12px rgba(177,75,255,.2)}
+.keys-label{font-size:10px;letter-spacing:.24em;color:var(--dim);margin-right:4px}
+.tools{display:flex;gap:8px}
+
+/* ---------- buttons ---------- */
+.btn{
+  border:2px solid var(--edge-2);background:#120c1e;color:var(--ink);
+  padding:9px 14px;font-size:11px;letter-spacing:.18em;text-transform:uppercase;font-weight:700;
+  transition:transform .08s ease,box-shadow .12s ease,background .12s ease,border-color .12s ease;
+  box-shadow:3px 3px 0 rgba(0,0,0,.6);
+}
+.btn:hover{border-color:var(--violet);color:#fff;background:#1a1029;box-shadow:5px 5px 0 rgba(177,75,255,.25)}
+.btn:active{transform:translate(2px,2px);box-shadow:1px 1px 0 rgba(0,0,0,.6)}
+.btn.solid{background:var(--violet);border-color:var(--violet);color:#0a0610;box-shadow:4px 4px 0 rgba(177,75,255,.28)}
+.btn.solid:hover{background:#c46bff;color:#0a0610}
+.btn.sm{padding:7px 10px;font-size:10px}
+.btn:disabled{opacity:.38;cursor:not-allowed;transform:none}
+.btn:disabled:hover{border-color:var(--edge-2);background:#120c1e;box-shadow:3px 3px 0 rgba(0,0,0,.6);color:var(--ink)}
+
+/* ---------- intro ---------- */
+.intro{
+  margin-top:22px;border:2px solid var(--edge);border-left:6px solid var(--violet-dim);
+  background:var(--deep);padding:16px 20px;font-size:13px;color:var(--mute);box-shadow:var(--shadow);
+}
+.intro b{color:var(--ink);font-weight:700}
+.intro .warn{color:var(--violet);font-weight:700;letter-spacing:.06em}
+
+/* ---------- card grid ---------- */
+.grid{margin-top:22px;display:grid;gap:18px;grid-template-columns:repeat(auto-fit,minmax(270px,1fr))}
+.card{
+  position:relative;border:2px solid var(--edge);background:linear-gradient(170deg,var(--panel-2),#0b0713);
+  padding:20px 18px 18px;box-shadow:var(--shadow);text-align:left;overflow:hidden;
+  transition:transform .12s ease,box-shadow .14s ease,border-color .14s ease;
+  display:flex;flex-direction:column;gap:12px;min-height:220px;
+}
+.card:hover{transform:translate(-3px,-3px);border-color:var(--violet);box-shadow:11px 11px 0 rgba(177,75,255,.2)}
+.card:focus-visible{outline:2px solid var(--violet);outline-offset:3px}
+.card .idx{position:absolute;right:12px;top:8px;font-size:44px;font-family:var(--disp);font-weight:700;color:rgba(255,255,255,.045);line-height:1}
+.card .kind{font-size:9.5px;letter-spacing:.28em;color:var(--violet);text-transform:uppercase}
+.card h3{font-size:21px;text-transform:uppercase}
+.card p{font-size:12.5px;color:var(--mute);flex:1}
+.card .foot{display:flex;align-items:center;justify-content:space-between;gap:10px;border-top:1px dashed var(--edge-2);padding-top:11px}
+.pill{font-size:9.5px;letter-spacing:.2em;text-transform:uppercase;border:1px solid var(--edge-2);padding:4px 8px;color:var(--dim)}
+.pill.hard{border-color:#5b2340;color:#ff6d92}
+.pill.brutal{border-color:#6d2a12;color:#ff9245}
+.status{font-size:10px;letter-spacing:.2em;font-weight:700;text-transform:uppercase;color:var(--violet)}
+.card.done{border-color:var(--violet-dim);background:linear-gradient(170deg,#150c24,#0b0713)}
+.card.done .status{color:var(--ok)}
+.card.done::before{
+  content:"";position:absolute;inset:0;pointer-events:none;
+  background:repeating-linear-gradient(135deg,transparent 0 14px,rgba(65,240,182,.045) 14px 15px);
+}
+
+/* ---------- message strip ---------- */
+.msgwrap{margin-top:30px;border:2px solid var(--edge);background:var(--deep);box-shadow:var(--shadow)}
+.msghdr{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:12px 16px;border-bottom:2px solid var(--edge);background:#0e0917}
+.msghdr h2{font-size:13px;letter-spacing:.24em;text-transform:uppercase;font-weight:700}
+.msghdr .cnt{font-size:11px;color:var(--mute);letter-spacing:.16em}
+.frags{padding:8px 16px 16px}
+.frag{display:flex;gap:12px;align-items:baseline;padding:11px 0;border-bottom:1px dashed #241a36;font-size:13.5px}
+.frag:last-child{border-bottom:none}
+.frag .n{font-size:10px;color:var(--dim);letter-spacing:.2em;flex:none;width:34px}
+.frag .txt{color:var(--dim);letter-spacing:.02em;word-break:break-word}
+.frag.open .txt{color:var(--ink);text-shadow:0 0 18px rgba(177,75,255,.4)}
+.frag.open .n{color:var(--violet)}
+
+.finalbar{padding:16px;border-top:2px solid var(--edge);background:#0e0917;display:flex;justify-content:center}
+
+/* ---------- overlay / modal ---------- */
+.overlay{
+  position:fixed;inset:0;z-index:50;background:rgba(4,2,9,.9);backdrop-filter:blur(7px);
+  display:flex;align-items:flex-start;justify-content:center;padding:20px;overflow-y:auto;
+  animation:fade .16s ease;
+}
+@keyframes fade{from{opacity:0}to{opacity:1}}
+.modal{
+  width:min(880px,100%);border:3px solid var(--violet);background:var(--panel);
+  box-shadow:14px 14px 0 rgba(177,75,255,.16),0 0 60px rgba(0,0,0,.7);margin:auto;
+  animation:rise .2s cubic-bezier(.2,.9,.3,1);
+}
+@keyframes rise{from{transform:translateY(14px);opacity:0}to{transform:none;opacity:1}}
+.mhdr{display:flex;align-items:center;justify-content:space-between;gap:14px;padding:14px 16px;border-bottom:2px solid var(--edge);background:#0d0817}
+.mhdr .mt{display:flex;flex-direction:column;gap:3px}
+.mhdr h2{font-size:17px;text-transform:uppercase}
+.mhdr .mk{font-size:9.5px;letter-spacing:.26em;color:var(--violet);text-transform:uppercase}
+.mbody{padding:18px 16px 20px}
+
+/* ---------- shared game bits ---------- */
+.rules{border-left:4px solid var(--violet-dim);background:#0d0916;padding:11px 14px;font-size:12.5px;color:var(--mute);margin-bottom:16px}
+.rules b{color:var(--ink)}
+.hudrow{display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:space-between;margin-bottom:14px}
+.stat{border:2px solid var(--edge);background:#0c0814;padding:7px 11px;font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--mute)}
+.stat b{color:var(--ink);font-weight:700}
+.stat.alert b{color:var(--red)}
+.stat.good b{color:var(--ok)}
+.banner{
+  border:2px solid var(--violet);background:#170c26;padding:13px 15px;margin-bottom:14px;
+  font-size:12.5px;letter-spacing:.04em;display:flex;gap:12px;align-items:center;justify-content:space-between;flex-wrap:wrap;
+}
+.banner.win{border-color:var(--ok);background:#0b2119;box-shadow:0 0 30px rgba(65,240,182,.16)}
+.banner.fail{border-color:var(--red);background:#210b13}
+.banner .bt{font-weight:700;letter-spacing:.14em;text-transform:uppercase}
+.banner.win .bt{color:var(--ok)}
+.banner.fail .bt{color:var(--red)}
+.hint{font-size:11.5px;color:var(--dim);margin-top:12px;letter-spacing:.02em}
+.flash{animation:flash .4s ease}
+@keyframes flash{0%,100%{opacity:1}50%{opacity:.35}}
+.shake{animation:shake .32s ease}
+@keyframes shake{0%,100%{transform:translateX(0)}20%{transform:translateX(-7px)}40%{transform:translateX(6px)}60%{transform:translateX(-4px)}80%{transform:translateX(3px)}}
+
+/* ---------- TUMBLER ---------- */
+.tum-board{display:flex;flex-direction:column;gap:6px;border:2px solid var(--edge);background:#0a0611;padding:12px;max-height:290px;overflow-y:auto}
+.tum-row{display:flex;align-items:center;gap:10px;padding:5px 6px;border:1px solid transparent}
+.tum-row.active{border-color:var(--violet-dim);background:rgba(177,75,255,.05)}
+.tum-row .rn{font-size:10px;color:var(--dim);width:20px;flex:none}
+.slots{display:flex;gap:6px;flex:1}
+.slot{
+  width:40px;height:40px;flex:none;border:2px solid var(--edge-2);background:#0e0a18;
+  display:grid;place-items:center;font-size:19px;color:var(--dim);transition:all .12s ease;
+}
+.slot.filled{border-color:var(--violet);color:var(--violet);background:#160c24;text-shadow:0 0 12px rgba(177,75,255,.7)}
+.slot.past{border-color:#261c39;color:#a08fc4;background:#0c0814;text-shadow:none}
+.slot.cursor{border-color:#fff;box-shadow:0 0 0 2px rgba(255,255,255,.12)}
+.pegs{display:grid;grid-template-columns:repeat(3,9px);gap:4px;width:31px;flex:none}
+.peg{width:9px;height:9px;border:1px solid #2a2040;background:#0c0814}
+.peg.exact{background:var(--violet);border-color:var(--violet);box-shadow:0 0 8px rgba(177,75,255,.8)}
+.peg.near{background:transparent;border-color:var(--amber);box-shadow:0 0 6px rgba(255,176,46,.5)}
+.tum-pal{display:flex;flex-wrap:wrap;gap:8px;margin-top:14px}
+.sym{
+  width:46px;height:46px;border:2px solid var(--edge-2);background:#100b1c;font-size:21px;
+  display:grid;place-items:center;position:relative;transition:all .1s ease;
+}
+.sym:hover{border-color:var(--violet);color:var(--violet);transform:translateY(-2px);box-shadow:0 4px 0 rgba(177,75,255,.25)}
+.sym .k{position:absolute;right:2px;bottom:0;font-size:8px;color:var(--dim)}
+.tum-actions{display:flex;gap:8px;margin-top:14px;flex-wrap:wrap}
+
+/* ---------- CIPHER ---------- */
+.cip-text{border:2px solid var(--edge);background:#0a0611;padding:14px;display:flex;flex-wrap:wrap;gap:10px 4px;line-height:1}
+.cgroup{display:flex;gap:3px;margin-right:6px}
+.cchar{display:flex;flex-direction:column;align-items:center;gap:3px;width:22px}
+.cchar .plain{
+  width:22px;height:26px;border:1px solid var(--edge-2);background:#0f0a1a;display:grid;place-items:center;
+  font-size:14px;font-weight:700;color:var(--ink);cursor:pointer;transition:all .1s ease;
+}
+.cchar .cip{font-size:9.5px;color:var(--dim);letter-spacing:.06em}
+.cchar.sel .plain{border-color:#fff;background:#1d1230;box-shadow:0 0 0 2px rgba(255,255,255,.14)}
+.cchar.same .plain{border-color:var(--violet-dim);background:#150d23}
+.cchar.locked .plain{border-color:var(--ok);color:var(--ok);background:#0c2119;cursor:default}
+.cchar.dupe .plain{border-color:var(--red);color:var(--red)}
+.cchar.punct{width:auto}
+.cchar.punct .plain{border:none;background:none;width:auto;min-width:9px;color:var(--mute)}
+.cip-freq{margin-top:14px;border:2px solid var(--edge);background:#0a0611;padding:12px}
+.cip-freq h4{font-size:10px;letter-spacing:.24em;color:var(--mute);text-transform:uppercase;margin-bottom:10px;font-family:var(--mono)}
+.fbars{display:flex;gap:5px;align-items:flex-end;height:66px;overflow-x:auto;padding-bottom:2px}
+.fbar{display:flex;flex-direction:column;justify-content:flex-end;align-items:center;gap:4px;min-width:20px;flex:1}
+.fbar .bar{width:100%;background:linear-gradient(180deg,var(--violet),var(--violet-dim));min-height:2px;box-shadow:0 0 10px rgba(177,75,255,.3)}
+.fbar .lab{font-size:10px;color:var(--mute)}
+.fbar .num{font-size:8.5px;color:var(--dim)}
+.eng{margin-top:10px;font-size:11px;color:var(--dim);letter-spacing:.06em}
+.eng b{color:var(--violet);letter-spacing:.14em}
+.kbd{display:flex;flex-wrap:wrap;gap:4px;margin-top:14px}
+.kbd button{width:34px;height:34px;border:1px solid var(--edge-2);background:#0f0a1a;font-size:12px;font-weight:700}
+.kbd button:hover{border-color:var(--violet);color:var(--violet)}
+.kbd button.used{color:var(--dim);background:#0a0712}
+
+/* ---------- OVERLOAD (nim) ---------- */
+.nim-board{border:2px solid var(--edge);background:#0a0611;padding:16px;display:flex;flex-direction:column;gap:12px}
+.nim-row{display:flex;align-items:center;gap:10px}
+.nim-row .rl{font-size:10px;color:var(--dim);width:52px;flex:none;letter-spacing:.14em}
+.cells{display:flex;gap:7px;flex-wrap:wrap}
+.cell{
+  width:34px;height:34px;border:2px solid var(--violet-dim);background:#160c26;position:relative;
+  transition:all .1s ease;box-shadow:inset 0 0 12px rgba(177,75,255,.25);
+}
+.cell::after{content:"";position:absolute;inset:9px;background:var(--violet);box-shadow:0 0 10px rgba(177,75,255,.9)}
+.cell.gone{border-color:#1d1630;background:#0a0711;box-shadow:none;pointer-events:none}
+.cell.gone::after{background:#191226;box-shadow:none}
+.cell.mark{border-color:var(--red);background:#26101a;box-shadow:inset 0 0 14px rgba(255,61,110,.35)}
+.cell.mark::after{background:var(--red);box-shadow:0 0 12px rgba(255,61,110,.8)}
+.cell.ai{animation:zap .35s ease}
+@keyframes zap{0%{transform:scale(1)}50%{transform:scale(1.28) rotate(6deg);filter:brightness(2)}100%{transform:scale(1);opacity:.3}}
+.nim-log{margin-top:12px;border:2px solid var(--edge);background:#0a0611;padding:10px 12px;font-size:11.5px;color:var(--mute);height:86px;overflow-y:auto;display:flex;flex-direction:column-reverse;gap:4px}
+.nim-log span b{color:var(--violet)}
+.nim-log span.you b{color:var(--ok)}
+
+/* ---------- SIEGE ---------- */
+.siege-wrap{display:flex;gap:18px;flex-wrap:wrap}
+.sboard{
+  display:grid;grid-template-columns:repeat(7,1fr);gap:4px;border:2px solid var(--edge);background:#0a0611;padding:8px;
+  width:min(430px,100%);aspect-ratio:1;flex:none;
+}
+.sq{border:1px solid #1c1530;background:#0f0a1a;position:relative;display:grid;place-items:center;transition:all .1s ease;font-size:17px}
+.sq.burn{background:#0a0710;border-color:#150f22}
+.sq.burn::after{content:"";position:absolute;inset:22%;background:repeating-linear-gradient(45deg,#221a33 0 3px,transparent 3px 6px)}
+.sq.legal{border-color:var(--violet);background:#150c24;cursor:pointer;box-shadow:inset 0 0 14px rgba(177,75,255,.22)}
+.sq.legal:hover{background:#22103a;box-shadow:inset 0 0 20px rgba(177,75,255,.45)}
+.sq.legal::before{content:"";position:absolute;width:8px;height:8px;background:var(--violet);box-shadow:0 0 10px var(--violet)}
+.tok{width:74%;height:74%;display:grid;place-items:center;font-size:15px;font-weight:700;border:2px solid;position:relative;z-index:2}
+.tok.you{border-color:var(--violet);color:var(--violet);background:#1a0e2c;box-shadow:0 0 18px rgba(177,75,255,.55),inset 0 0 12px rgba(177,75,255,.3)}
+.tok.cpu{border-color:var(--red);color:var(--red);background:#260f19;box-shadow:0 0 18px rgba(255,61,110,.45),inset 0 0 12px rgba(255,61,110,.25)}
+.sq.lastmove{outline:1px dashed var(--edge-2)}
+.sside{flex:1;min-width:210px;display:flex;flex-direction:column;gap:10px}
+.legend{display:flex;flex-direction:column;gap:8px;border:2px solid var(--edge);background:#0a0611;padding:12px;font-size:11.5px;color:var(--mute)}
+.legend div{display:flex;align-items:center;gap:9px}
+.swatch{width:15px;height:15px;border:2px solid;flex:none}
+.swatch.you{border-color:var(--violet);background:#1a0e2c}
+.swatch.cpu{border-color:var(--red);background:#260f19}
+.swatch.burn{border-color:#251c38;background:#0a0710}
+
+/* ---------- vault / final ---------- */
+.vault-inner{width:min(760px,100%);border:3px solid var(--violet);background:linear-gradient(165deg,#150c24,#08060d);box-shadow:0 0 90px rgba(177,75,255,.35),18px 18px 0 rgba(177,75,255,.12);padding:34px 28px;margin:auto;text-align:center;position:relative;overflow:hidden}
+.vault-inner::before{content:"";position:absolute;inset:0;background:repeating-linear-gradient(0deg,transparent 0 3px,rgba(177,75,255,.04) 3px 4px);pointer-events:none}
+.vault-inner h2{font-size:clamp(22px,4.4vw,34px);text-transform:uppercase;color:var(--violet);text-shadow:0 0 30px rgba(177,75,255,.6)}
+.vault-inner .vsub{font-size:10px;letter-spacing:.34em;color:var(--mute);text-transform:uppercase;margin-top:8px}
+.vmsg{margin:26px auto 0;max-width:600px;font-size:15px;line-height:1.75;color:var(--ink);text-align:left;border-left:4px solid var(--violet);padding:14px 18px;background:rgba(177,75,255,.05)}
+.phrase{
+  margin-top:26px;border:3px dashed var(--violet);padding:20px 14px;background:#0a0611;
+}
+.phrase .pl{font-size:9.5px;letter-spacing:.34em;color:var(--mute);text-transform:uppercase}
+.phrase .pv{font-family:var(--disp);font-size:clamp(20px,5vw,34px);font-weight:700;letter-spacing:.06em;color:#fff;text-transform:uppercase;margin-top:10px;text-shadow:0 0 26px rgba(177,75,255,.9),0 0 60px rgba(177,75,255,.5)}
+.vault-actions{margin-top:24px;display:flex;gap:10px;justify-content:center;flex-wrap:wrap}
+.confetti{position:fixed;top:-12px;width:8px;height:14px;z-index:60;pointer-events:none;animation:fall linear forwards}
+@keyframes fall{to{transform:translateY(106vh) rotate(900deg);opacity:.85}}
+
+footer.foot{margin-top:34px;display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;font-size:10px;letter-spacing:.2em;color:#3f374f;text-transform:uppercase}
+
+@media (max-width:640px){
+  .app{padding:16px 12px 44px}
+  .hdr{padding:14px}
+  .hdr-right{align-items:flex-start;width:100%}
+  .slot{width:34px;height:34px;font-size:16px}
+  .sym{width:40px;height:40px;font-size:18px}
+  .mbody{padding:14px 12px 18px}
+  .modal{border-width:2px}
+  .cell{width:28px;height:28px}
+}
+</style>
+</head>
+<body>
+<div class="app">
+  <header class="hdr">
+    <div class="brand">
+      <div class="mark">⌬</div>
+      <div>
+        <h1 class="title">Code Cracking <span>Lock Picker</span></h1>
+        <div class="sub">Four locks · four fragments · one phrase</div>
+      </div>
+    </div>
+    <div class="hdr-right">
+      <div class="keys" id="keys"><span class="keys-label">FRAGMENTS</span></div>
+      <div class="tools">
+        <button class="btn sm" id="soundBtn">Sound: On</button>
+        <button class="btn sm" id="resetBtn">Wipe Progress</button>
+      </div>
+    </div>
+  </header>
+
+  <div class="intro">
+    <b>BRIEFING.</b> Four independent locks guard one message. Each lock you break releases a fragment of it.
+    No lock is on a timer, none can be brute-forced by luck alone, and the two board games are played against
+    an engine that <span class="warn">does not make mistakes</span>. Take them in any order. Think first, click second.
+  </div>
+
+  <main class="grid" id="cards"></main>
+
+  <section class="msgwrap">
+    <div class="msghdr">
+      <h2>Recovered Message</h2>
+      <div class="cnt" id="msgCount">0 / 4 FRAGMENTS</div>
+    </div>
+    <div class="frags" id="frags"></div>
+    <div class="finalbar"><button class="btn solid" id="openVault" disabled>Open The Vault</button></div>
+  </section>
+
+  <footer class="foot">
+    <span>CCLP · v1.0</span>
+    <span>Local progress only · nothing leaves this frame</span>
+  </footer>
+</div>
+
+<div class="overlay" id="overlay" hidden>
+  <div class="modal" role="dialog" aria-modal="true">
+    <div class="mhdr">
+      <div class="mt">
+        <div class="mk" id="modalKind"></div>
+        <h2 id="modalTitle"></h2>
+      </div>
+      <button class="btn sm" id="closeBtn">Close ✕</button>
+    </div>
+    <div class="mbody" id="modalBody"></div>
+  </div>
+</div>
+
+<div class="overlay" id="vault" hidden>
+  <div class="vault-inner">
+    <h2>Vault Open</h2>
+    <div class="vsub">All four locks defeated</div>
+    <div class="vmsg" id="vaultMsg"></div>
+    <div class="phrase">
+      <div class="pl">Code Phrase</div>
+      <div class="pv" id="vaultPhrase"></div>
+    </div>
+    <div class="vault-actions">
+      <button class="btn" id="vaultClose">Close</button>
+      <button class="btn solid" id="vaultCopy">Copy Message</button>
+    </div>
+  </div>
+</div>
+<script>
+/* ============================================================
+   CODE CRACKING LOCK PICKER — engine
+   ============================================================ */
+(function () {
+"use strict";
+
+/* ---------- message ---------- */
+var FRAGMENTS = [
+  "congratulations, you had the patience",
+  "and brain power to get all the way here.",
+  "You will be rewarded.",
+  "The code phrase is \u201Ci win complete euphoria\u201D."
+];
+var FULL_MESSAGE = FRAGMENTS.join(" ");
+var PHRASE = "i win complete euphoria";
+
+/* ---------- persistence ---------- */
+var KEY = "cclp.progress.v1";
+var state = { solved: [false, false, false, false], sound: true };
+try {
+  var raw = localStorage.getItem(KEY);
+  if (raw) {
+    var p = JSON.parse(raw);
+    if (p && Array.isArray(p.solved) && p.solved.length === 4) state.solved = p.solved.map(Boolean);
+    if (p && typeof p.sound === "boolean") state.sound = p.sound;
+  }
+} catch (e) {}
+function save() { try { localStorage.setItem(KEY, JSON.stringify(state)); } catch (e) {} }
+
+/* ---------- audio ---------- */
+var actx = null;
+function ac() {
+  if (!state.sound) return null;
+  try {
+    if (!actx) actx = new (window.AudioContext || window.webkitAudioContext)();
+    if (actx.state === "suspended") actx.resume();
+    return actx;
+  } catch (e) { return null; }
+}
+function beep(f1, f2, dur, type, vol, delay) {
+  var c = ac(); if (!c) return;
+  var t = c.currentTime + (delay || 0);
+  var o = c.createOscillator(), g = c.createGain();
+  o.type = type || "square";
+  o.frequency.setValueAtTime(f1, t);
+  o.frequency.exponentialRampToValueAtTime(Math.max(30, f2), t + dur);
+  g.gain.setValueAtTime(0.0001, t);
+  g.gain.exponentialRampToValueAtTime(vol || 0.05, t + 0.012);
+  g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+  o.connect(g); g.connect(c.destination); o.start(t); o.stop(t + dur + 0.02);
+}
+var sfx = {
+  tick:  function () { beep(420, 380, 0.05, "square", 0.035); },
+  place: function () { beep(680, 900, 0.06, "square", 0.04); },
+  bad:   function () { beep(200, 90, 0.26, "sawtooth", 0.05); },
+  good:  function () { beep(660, 1180, 0.12, "triangle", 0.06); },
+  open:  function () { beep(300, 620, 0.1, "square", 0.04); },
+  unlock:function () { beep(520, 780, 0.1, "triangle", 0.06); beep(780, 1180, 0.14, "triangle", 0.055, 0.1); beep(1180, 1560, 0.2, "triangle", 0.05, 0.22); },
+  vault: function () { [523,659,784,1046,1318].forEach(function (f, i) { beep(f, f * 1.5, 0.34, "triangle", 0.05, i * 0.13); }); }
+};
+
+/* ---------- dom helpers ---------- */
+function el(tag, cls, txt) { var d = document.createElement(tag); if (cls) d.className = cls; if (txt != null) d.textContent = txt; return d; }
+function $(id) { return document.getElementById(id); }
+function clear(n) { while (n.firstChild) n.removeChild(n.firstChild); }
+function shuffle(a) { for (var i = a.length - 1; i > 0; i--) { var j = Math.floor(Math.random() * (i + 1)); var t = a[i]; a[i] = a[j]; a[j] = t; } return a; }
+function ri(n) { return Math.floor(Math.random() * n); }
+
+/* ---------- game registry ---------- */
+var GAMES = [
+  { id:0, kind:"Cipher Lock",   title:"Tumbler Array",   diff:"hard",
+    desc:"A five-stage tumbler drawn from seven symbols, repeats allowed. Ten pulls. Each pull returns filled pegs for right symbol in right stage, hollow pegs for right symbol in the wrong stage \u2014 unordered.",
+    tag:"16,807 states", mount:mountTumbler },
+  { id:1, kind:"Cipher Lock",   title:"Dead Drop",       diff:"brutal",
+    desc:"An intercepted line under a monoalphabetic substitution. Three characters were lifted off the worn keypad. Everything else is yours to break with frequency, pattern and nerve.",
+    tag:"Cryptogram", mount:mountCipher },
+  { id:2, kind:"Strategy Lock", title:"Overload",        diff:"hard",
+    desc:"Three banks of live cells. Drain any number from one bank per turn. Whoever drains the final cell trips the overload and loses. The engine solves the position exactly \u2014 one loose move is fatal.",
+    tag:"Mis\u00E8re Nim", mount:mountNim },
+  { id:3, kind:"Strategy Lock", title:"Siege",           diff:"brutal",
+    desc:"Seven by seven. Both tokens move like a queen. Every square you leave burns away forever. Trap the engine with no legal move before it does the same to you.",
+    tag:"Isolation", mount:mountSiege }
+];
+
+/* ---------- shell rendering ---------- */
+function renderKeys() {
+  var k = $("keys");
+  clear(k);
+  k.appendChild(el("span", "keys-label", "FRAGMENTS"));
+  for (var i = 0; i < 4; i++) {
+    var d = el("div", "key" + (state.solved[i] ? " on" : ""), state.solved[i] ? "\u2713" : String(i + 1));
+    k.appendChild(d);
+  }
+}
+function renderCards() {
+  var wrap = $("cards");
+  clear(wrap);
+  GAMES.forEach(function (g, i) {
+    var c = el("button", "card" + (state.solved[g.id] ? " done" : ""));
+    c.setAttribute("type", "button");
+    c.appendChild(el("div", "idx", "0" + (i + 1)));
+    c.appendChild(el("div", "kind", g.kind));
+    c.appendChild(el("h3", null, g.title));
+    c.appendChild(el("p", null, g.desc));
+    var foot = el("div", "foot");
+    var pills = el("div");
+    pills.style.display = "flex"; pills.style.gap = "6px"; pills.style.flexWrap = "wrap";
+    pills.appendChild(el("span", "pill", g.tag));
+    pills.appendChild(el("span", "pill " + g.diff, g.diff === "brutal" ? "Brutal" : "Hard"));
+    foot.appendChild(pills);
+    foot.appendChild(el("span", "status", state.solved[g.id] ? "\u25A0 Cracked" : "\u25B6 Engage"));
+    c.appendChild(foot);
+    c.addEventListener("click", function () { openGame(g); });
+    wrap.appendChild(c);
+  });
+}
+function renderFrags() {
+  var f = $("frags");
+  clear(f);
+  FRAGMENTS.forEach(function (txt, i) {
+    var row = el("div", "frag" + (state.solved[i] ? " open" : ""));
+    row.appendChild(el("span", "n", "0" + (i + 1)));
+    row.appendChild(el("span", "txt", state.solved[i] ? txt : txt.replace(/[^\s]/g, "\u2588")));
+    f.appendChild(row);
+  });
+  var n = state.solved.filter(Boolean).length;
+  $("msgCount").textContent = n + " / 4 FRAGMENTS";
+  $("openVault").disabled = n < 4;
+}
+function renderAll() { renderKeys(); renderCards(); renderFrags(); }
+
+/* ---------- modal ---------- */
+var cleanup = null;
+function openGame(g) {
+  sfx.open();
+  $("modalKind").textContent = g.kind + " \u00B7 " + g.tag;
+  $("modalTitle").textContent = g.title;
+  var body = $("modalBody");
+  clear(body);
+  $("overlay").hidden = false;
+  document.body.style.overflow = "hidden";
+  cleanup = g.mount(body, function () { solve(g.id); }) || null;
+}
+function closeModal() {
+  if (typeof cleanup === "function") { try { cleanup(); } catch (e) {} }
+  cleanup = null;
+  $("overlay").hidden = true;
+  document.body.style.overflow = "";
+  clear($("modalBody"));
+}
+function solve(id) {
+  if (state.solved[id]) { renderAll(); return; }
+  state.solved[id] = true;
+  save();
+  sfx.unlock();
+  renderAll();
+}
+
+/* ---------- shared UI builders ---------- */
+function rules(html) { var d = el("div", "rules"); d.innerHTML = html; return d; }
+function statBox(label, value, cls) {
+  var s = el("div", "stat" + (cls ? " " + cls : ""));
+  s.innerHTML = label + " <b>" + value + "</b>";
+  return s;
+}
+function banner(kind, title, text, actions) {
+  var b = el("div", "banner" + (kind ? " " + kind : ""));
+  var left = el("div");
+  left.appendChild(el("div", "bt", title));
+  if (text) { var t = el("div"); t.style.marginTop = "4px"; t.style.color = "var(--mute)"; t.textContent = text; left.appendChild(t); }
+  b.appendChild(left);
+  if (actions) b.appendChild(actions);
+  return b;
+}
+function winBanner(text, onNext) {
+  var acts = el("div");
+  acts.style.display = "flex"; acts.style.gap = "8px";
+  var b = el("button", "btn solid sm", "Claim Fragment");
+  b.addEventListener("click", onNext);
+  acts.appendChild(b);
+  return banner("win", "\u25A0 LOCK RELEASED", text, acts);
+}
+
+/* ============================================================
+   LOCK 01 — TUMBLER ARRAY (deduction / mastermind)
+   ============================================================ */
+var SYMS = ["\u25C6", "\u25B2", "\u25CF", "\u25A0", "\u2726", "\u2B1F", "\u2B22"];
+var TUM_SLOTS = 5, TUM_TRIES = 10;
+
+function scoreGuess(guess, code) {
+  var exact = 0, near = 0, i;
+  var gc = [], cc = [];
+  for (i = 0; i < code.length; i++) {
+    if (guess[i] === code[i]) exact++;
+    else { gc.push(guess[i]); cc.push(code[i]); }
+  }
+  for (i = 0; i < gc.length; i++) {
+    var k = cc.indexOf(gc[i]);
+    if (k >= 0) { near++; cc.splice(k, 1); }
+  }
+  return { exact: exact, near: near };
+}
+
+function mountTumbler(root, onWin) {
+  var code = [], i;
+  for (i = 0; i < TUM_SLOTS; i++) code.push(ri(SYMS.length));
+  var rows = [];          // {guess:[], exact, near}
+  var current = [];
+  var done = false;
+
+  root.appendChild(rules(
+    "<b>Objective.</b> Recover the 5-stage combination. Symbols may repeat. " +
+    "<b>Filled peg</b> = correct symbol, correct stage. <b>Hollow peg</b> = correct symbol, wrong stage. " +
+    "Pegs are never in stage order. Ten pulls, then the array re-scrambles."
+  ));
+
+  var hud = el("div", "hudrow");
+  var sTries = statBox("Pulls left", TUM_TRIES);
+  var sSpace = statBox("Keyspace", "7\u2075");
+  hud.appendChild(sTries); hud.appendChild(sSpace);
+  root.appendChild(hud);
+
+  var bslot = el("div"); root.appendChild(bslot);
+  var board = el("div", "tum-board"); root.appendChild(board);
+  var pal = el("div", "tum-pal"); root.appendChild(pal);
+  var acts = el("div", "tum-actions"); root.appendChild(acts);
+  var hint = el("div", "hint", "Keyboard: 1\u20137 to place \u00B7 Backspace to undo \u00B7 Enter to pull.");
+  root.appendChild(hint);
+
+  SYMS.forEach(function (s, idx) {
+    var b = el("button", "sym", s);
+    b.appendChild(el("span", "k", String(idx + 1)));
+    b.addEventListener("click", function () { push(idx); });
+    pal.appendChild(b);
+  });
+
+  var undo = el("button", "btn sm", "\u232B Undo");
+  var clearB = el("button", "btn sm", "Clear");
+  var pull = el("button", "btn solid sm", "Pull Lever");
+  undo.addEventListener("click", function () { if (current.length && !done) { current.pop(); sfx.tick(); draw(); } });
+  clearB.addEventListener("click", function () { if (!done) { current = []; sfx.tick(); draw(); } });
+  pull.addEventListener("click", submit);
+  acts.appendChild(undo); acts.appendChild(clearB); acts.appendChild(pull);
+
+  function push(idx) {
+    if (done || current.length >= TUM_SLOTS) return;
+    current.push(idx); sfx.place(); draw();
+  }
+  function submit() {
+    if (done || current.length !== TUM_SLOTS) {
+      if (!done) { board.classList.add("shake"); setTimeout(function () { board.classList.remove("shake"); }, 340); sfx.bad(); }
+      return;
+    }
+    var sc = scoreGuess(current, code);
+    rows.push({ guess: current.slice(), exact: sc.exact, near: sc.near });
+    current = [];
+    if (sc.exact === TUM_SLOTS) {
+      done = true; draw();
+      clear(bslot);
+      bslot.appendChild(winBanner("Combination recovered in " + rows.length + " pull" + (rows.length === 1 ? "" : "s") + ".", function () { onWin(); closeModal(); }));
+      sfx.good();
+      return;
+    }
+    if (rows.length >= TUM_TRIES) {
+      done = true; draw();
+      clear(bslot);
+      var acts2 = el("div");
+      var rb = el("button", "btn sm", "Re-scramble");
+      rb.addEventListener("click", function () { clear(root); mountTumbler(root, onWin); });
+      acts2.appendChild(rb);
+      bslot.appendChild(banner("fail", "\u25A0 ARRAY LOCKED OUT", "Ten pulls spent. The tumbler re-scrambles to a new combination.", acts2));
+      sfx.bad();
+      return;
+    }
+    sfx.tick();
+    draw();
+  }
+  function draw() {
+    sTries.innerHTML = "Pulls left <b>" + (TUM_TRIES - rows.length) + "</b>";
+    if (TUM_TRIES - rows.length <= 3 && !done) sTries.className = "stat alert"; else sTries.className = "stat";
+    clear(board);
+    var r;
+    for (r = 0; r < rows.length; r++) board.appendChild(rowEl(r + 1, rows[r].guess, rows[r], false));
+    if (!done) board.appendChild(rowEl(rows.length + 1, current, null, true));
+    for (r = rows.length + 1; r < TUM_TRIES; r++) board.appendChild(rowEl(r + 1, [], null, false));
+    board.scrollTop = board.scrollHeight;
+  }
+  function rowEl(n, guess, res, active) {
+    var row = el("div", "tum-row" + (active ? " active" : ""));
+    row.appendChild(el("span", "rn", n < 10 ? "0" + n : String(n)));
+    var slots = el("div", "slots");
+    for (var i = 0; i < TUM_SLOTS; i++) {
+      var filled = guess[i] != null;
+      var cls = "slot" + (filled ? (res || !active ? " past" : " filled") : "") + (active && i === guess.length ? " cursor" : "");
+      if (filled && active) cls = "slot filled" + (i === guess.length ? " cursor" : "");
+      slots.appendChild(el("div", cls, filled ? SYMS[guess[i]] : ""));
+    }
+    row.appendChild(slots);
+    var pegs = el("div", "pegs");
+    for (var p = 0; p < TUM_SLOTS; p++) {
+      var pc = "peg";
+      if (res) { if (p < res.exact) pc = "peg exact"; else if (p < res.exact + res.near) pc = "peg near"; }
+      pegs.appendChild(el("div", pc));
+    }
+    row.appendChild(pegs);
+    return row;
+  }
+  function onKey(e) {
+    if (e.key >= "1" && e.key <= String(SYMS.length)) { push(parseInt(e.key, 10) - 1); e.preventDefault(); }
+    else if (e.key === "Backspace") { if (current.length && !done) { current.pop(); sfx.tick(); draw(); } e.preventDefault(); }
+    else if (e.key === "Enter") { submit(); e.preventDefault(); }
+  }
+  document.addEventListener("keydown", onKey);
+  draw();
+  return function () { document.removeEventListener("keydown", onKey); };
+}
+/* ============================================================
+   LOCK 02 — DEAD DROP (substitution cryptogram)
+   ============================================================ */
+var PLAINS = [
+  "A LOCK IS ONLY A QUESTION ASKED IN METAL AND EVERY QUESTION HAS A WEAK VOWEL",
+  "PATIENCE IS THE SHARPEST TOOL IN THE KIT SO NEVER FORCE WHAT YOU CAN SIMPLY OUTTHINK",
+  "THE VAULT DOES NOT FEAR STRENGTH IT FEARS SOMEONE WHO COUNTS LETTERS QUIETLY",
+  "EVERY CIPHER LEAKS A LITTLE TRUTH THROUGH THE WORDS IT REPEATS MOST OFTEN",
+  "GUESSWORK OPENS NOTHING BUT A CAREFUL MIND WALKS THROUGH DOORS MARKED IMPOSSIBLE"
+];
+var ENG_ORDER = "E T A O I N S H R D L U";
+
+function mountCipher(root, onWin) {
+  var plain = PLAINS[ri(PLAINS.length)];
+  var AZ = "ABCDEFGHIJKLMNOPQRSTUVWXYZ".split("");
+  var map = {}, used, ok = false, attempt = 0;
+  while (!ok && attempt < 200) {          // random derangement
+    attempt++;
+    used = shuffle(AZ.slice());
+    ok = true;
+    for (var i = 0; i < 26; i++) if (used[i] === AZ[i]) { ok = false; break; }
+  }
+  for (var i2 = 0; i2 < 26; i2++) map[AZ[i2]] = used[i2];
+
+  var cipher = plain.replace(/[A-Z]/g, function (ch) { return map[ch]; });
+  var letters = [];
+  for (var i3 = 0; i3 < plain.length; i3++) if (/[A-Z]/.test(plain[i3]) && letters.indexOf(cipher[i3]) < 0) letters.push(cipher[i3]);
+
+  var guess = {};   // cipherLetter -> plainLetter
+  var locked = {};  // freebies
+  var freebies = shuffle(letters.slice()).slice(0, 3);
+  freebies.forEach(function (c) {
+    var pl = null;
+    for (var k = 0; k < plain.length; k++) if (cipher[k] === c) { pl = plain[k]; break; }
+    guess[c] = pl; locked[c] = true;
+  });
+
+  var sel = null, done = false;
+
+  root.appendChild(rules(
+    "<b>Objective.</b> One plaintext letter maps to exactly one cipher letter, and no letter maps to itself. " +
+    "Click a slot then type a letter (or use the pad). <b>Three letters</b> came pre-lifted off the keypad \u2014 they are locked and correct. " +
+    "Red means you have used that plaintext letter twice."
+  ));
+
+  var hud = el("div", "hudrow");
+  var sFilled = statBox("Mapped", "0 / " + letters.length);
+  var sSel = statBox("Selected", "\u2014");
+  hud.appendChild(sFilled); hud.appendChild(sSel);
+  var hb = el("div"); hb.style.display = "flex"; hb.style.gap = "8px";
+  var clearBtn = el("button", "btn sm", "Clear Unlocked");
+  clearBtn.addEventListener("click", function () {
+    if (done) return;
+    letters.forEach(function (c) { if (!locked[c]) delete guess[c]; });
+    sfx.tick(); draw();
+  });
+  hb.appendChild(clearBtn);
+  hud.appendChild(hb);
+  root.appendChild(hud);
+
+  var bslot = el("div"); root.appendChild(bslot);
+  var textBox = el("div", "cip-text"); root.appendChild(textBox);
+
+  var freq = el("div", "cip-freq");
+  freq.appendChild(el("h4", null, "Cipher frequency \u00B7 intercepted sample"));
+  var bars = el("div", "fbars"); freq.appendChild(bars);
+  var engRow = el("div", "eng");
+  engRow.innerHTML = "English frequency order: <b>" + ENG_ORDER + "</b>";
+  freq.appendChild(engRow);
+  root.appendChild(freq);
+
+  var kbd = el("div", "kbd"); root.appendChild(kbd);
+  AZ.forEach(function (L) {
+    var b = el("button", null, L);
+    b.dataset.letter = L;
+    b.addEventListener("click", function () { assign(L); });
+    kbd.appendChild(b);
+  });
+  var delBtn = el("button", null, "\u232B");
+  delBtn.style.width = "auto"; delBtn.style.padding = "0 12px";
+  delBtn.addEventListener("click", function () { assign(null); });
+  kbd.appendChild(delBtn);
+
+  root.appendChild(el("div", "hint", "Tip: single-letter words are A or I; the commonest 3-letter pattern is usually THE. Doubled letters favour LL, SS, EE, OO."));
+
+  var counts = {};
+  for (var i4 = 0; i4 < cipher.length; i4++) if (/[A-Z]/.test(cipher[i4])) counts[cipher[i4]] = (counts[cipher[i4]] || 0) + 1;
+  var freqOrder = Object.keys(counts).sort(function (a, b) { return counts[b] - counts[a]; });
+  var maxC = counts[freqOrder[0]] || 1;
+
+  function assign(L) {
+    if (done || !sel || locked[sel]) return;
+    if (L == null) { delete guess[sel]; sfx.tick(); }
+    else { guess[sel] = L; sfx.place(); }
+    draw();
+    check();
+  }
+  function check() {
+    for (var i = 0; i < plain.length; i++) {
+      if (!/[A-Z]/.test(plain[i])) continue;
+      if (guess[cipher[i]] !== plain[i]) return;
+    }
+    done = true;
+    sfx.good();
+    clear(bslot);
+    bslot.appendChild(winBanner("Plaintext recovered. The drop is clean.", function () { onWin(); closeModal(); }));
+    draw();
+  }
+  function dupes() {
+    var seen = {}, dup = {};
+    letters.forEach(function (c) {
+      var g = guess[c];
+      if (!g) return;
+      if (seen[g]) { dup[c] = true; dup[seen[g]] = true; }
+      else seen[g] = c;
+    });
+    return dup;
+  }
+  function draw() {
+    var dup = dupes();
+    var mapped = letters.filter(function (c) { return guess[c]; }).length;
+    sFilled.innerHTML = "Mapped <b>" + mapped + " / " + letters.length + "</b>";
+    sSel.innerHTML = "Selected <b>" + (sel || "\u2014") + "</b>";
+    clear(textBox);
+    var words = cipher.split(" ");
+    var pos = 0;
+    words.forEach(function (w) {
+      var g = el("div", "cgroup");
+      for (var i = 0; i < w.length; i++) {
+        var ch = w[i], idx = pos + i;
+        var isAlpha = /[A-Z]/.test(ch);
+        var cc = el("div", "cchar" + (isAlpha ? "" : " punct"));
+        if (isAlpha) {
+          if (locked[ch]) cc.className += " locked";
+          else if (dup[ch]) cc.className += " dupe";
+          if (sel === ch) cc.className += " sel";
+          else if (sel && sel === ch) cc.className += " same";
+        }
+        var p = el("div", "plain", isAlpha ? (guess[ch] || "\u00B7") : ch);
+        if (isAlpha) {
+          (function (c) {
+            p.addEventListener("click", function () {
+              if (done || locked[c]) return;
+              sel = (sel === c ? null : c); sfx.tick(); draw();
+            });
+          })(ch);
+        }
+        cc.appendChild(p);
+        cc.appendChild(el("div", "cip", isAlpha ? ch : " "));
+        g.appendChild(cc);
+        void idx;
+      }
+      textBox.appendChild(g);
+      pos += w.length + 1;
+    });
+    clear(bars);
+    freqOrder.forEach(function (c) {
+      var f = el("div", "fbar");
+      var b = el("div", "bar");
+      b.style.height = Math.max(3, Math.round((counts[c] / maxC) * 42)) + "px";
+      if (guess[c]) b.style.background = "linear-gradient(180deg,#41f0b6,#1d7f61)";
+      f.appendChild(el("div", "num", String(counts[c])));
+      f.appendChild(b);
+      f.appendChild(el("div", "lab", c));
+      bars.appendChild(f);
+    });
+    var usedSet = {};
+    letters.forEach(function (c) { if (guess[c]) usedSet[guess[c]] = true; });
+    Array.prototype.forEach.call(kbd.children, function (b) {
+      if (!b.dataset.letter) return;
+      b.className = usedSet[b.dataset.letter] ? "used" : "";
+    });
+  }
+  function onKey(e) {
+    if (done) return;
+    if (/^[a-zA-Z]$/.test(e.key)) { assign(e.key.toUpperCase()); e.preventDefault(); }
+    else if (e.key === "Backspace" || e.key === "Delete") { assign(null); e.preventDefault(); }
+    else if (e.key === "Escape") { if (sel) { sel = null; draw(); e.preventDefault(); e.stopPropagation(); } }
+  }
+  document.addEventListener("keydown", onKey);
+  draw();
+  return function () { document.removeEventListener("keydown", onKey); };
+}
+
+/* ============================================================
+   LOCK 03 — OVERLOAD (misere nim, perfect engine)
+   ============================================================ */
+var NIM_SETUPS = [[3, 5, 7], [1, 4, 6], [2, 5, 6], [3, 4, 6], [2, 3, 7]];
+var NIM_TARGET = 2;
+
+function nimBestMove(h) {
+  // returns {row, take} winning move under misere rules, or null
+  var big = h.filter(function (n) { return n > 1; }).length;
+  var ones = h.filter(function (n) { return n === 1; }).length;
+  var r, take;
+  if (big === 0) {
+    // all heaps 0/1 -> leave an ODD number of 1s
+    for (r = 0; r < h.length; r++) if (h[r] === 1) {
+      if ((ones - 1) % 2 === 1) return { row: r, take: 1 };
+    }
+    return null;
+  }
+  if (big === 1) {
+    // leave odd count of 1s: reduce the big heap to 0 or 1
+    for (r = 0; r < h.length; r++) if (h[r] > 1) {
+      var target = (ones % 2 === 0) ? 1 : 0;
+      return { row: r, take: h[r] - target };
+    }
+  }
+  // normal play: make xor zero
+  var x = h.reduce(function (a, b) { return a ^ b; }, 0);
+  if (x !== 0) {
+    for (r = 0; r < h.length; r++) {
+      var t = h[r] ^ x;
+      if (t < h[r]) return { row: r, take: h[r] - t };
+    }
+  }
+  return null;
+}
+function nimIsWinning(h) { return nimBestMove(h) !== null; }
+
+function mountNim(root, onWin) {
+  var wins = 0, round = 0;
+  var heaps, turn, over, log, marked = null, busy = false;
+
+  root.appendChild(rules(
+    "<b>Objective.</b> Drain any number of live cells from a single bank per turn \u2014 at least one. " +
+    "Whoever drains the <b>very last cell on the board</b> trips the overload and <b>loses</b>. " +
+    "Win <b>" + NIM_TARGET + " rounds in a row</b>. The engine plays perfectly, so it never hands you a second chance."
+  ));
+
+  var hud = el("div", "hudrow");
+  var sWins = statBox("Streak", "0 / " + NIM_TARGET, "good");
+  var sTurn = statBox("Turn", "You");
+  hud.appendChild(sWins); hud.appendChild(sTurn);
+  root.appendChild(hud);
+
+  var bslot = el("div"); root.appendChild(bslot);
+  var board = el("div", "nim-board"); root.appendChild(board);
+  var logBox = el("div", "nim-log"); root.appendChild(logBox);
+  root.appendChild(el("div", "hint", "Click a cell to drain it and every cell to its right in that bank."));
+
+  function say(txt, you) {
+    var s = el("span", you ? "you" : null);
+    s.innerHTML = txt;
+    logBox.insertBefore(s, logBox.firstChild);
+    log.push(txt);
+  }
+  function newRound() {
+    round++;
+    // choose a setup that is a WIN for the player to move (fair but demanding)
+    var pool = NIM_SETUPS.filter(nimIsWinning);
+    heaps = (pool.length ? pool[ri(pool.length)] : NIM_SETUPS[0]).slice();
+    turn = "you"; over = false; log = []; marked = null; busy = false;
+    clear(logBox);
+    clear(bslot);
+    say("Round <b>" + round + "</b> \u2014 banks live at [" + heaps.join(", ") + "]. You move first.");
+    draw();
+  }
+  function draw() {
+    sWins.innerHTML = "Streak <b>" + wins + " / " + NIM_TARGET + "</b>";
+    sTurn.innerHTML = "Turn <b>" + (over ? "\u2014" : (turn === "you" ? "You" : "Engine")) + "</b>";
+    clear(board);
+    heaps.forEach(function (n, r) {
+      var row = el("div", "nim-row");
+      row.appendChild(el("span", "rl", "BANK " + String.fromCharCode(65 + r)));
+      var cells = el("div", "cells");
+      var full = NIM_SETUPS.reduce(function (m, s) { return Math.max(m, s[r]); }, 0);
+      for (var i = 0; i < full; i++) {
+        var alive = i < n;
+        var cls = "cell" + (alive ? "" : " gone");
+        if (alive && marked && marked.row === r && i >= marked.from) cls += " mark";
+        var c = el("div", cls);
+        if (alive && turn === "you" && !over && !busy) {
+          (function (rr, ii) {
+            c.addEventListener("mouseenter", function () { marked = { row: rr, from: ii }; paintMarks(); });
+            c.addEventListener("click", function () { playerMove(rr, heaps[rr] - ii); });
+          })(r, i);
+          c.style.cursor = "pointer";
+        }
+        cells.appendChild(c);
+      }
+      row.appendChild(cells);
+      row.appendChild(el("span", "rl", n + " live"));
+      board.appendChild(row);
+    });
+  }
+  // repaint only the .mark classes so hover never rebuilds the DOM under the cursor
+  function paintMarks() {
+    Array.prototype.forEach.call(board.querySelectorAll(".nim-row"), function (row, r) {
+      Array.prototype.forEach.call(row.querySelectorAll(".cell"), function (c, i) {
+        if (c.classList.contains("gone")) return;
+        var on = marked && marked.row === r && i >= marked.from;
+        c.classList.toggle("mark", !!on);
+      });
+    });
+  }
+  board.addEventListener("mouseleave", function () { marked = null; paintMarks(); });
+  function total() { return heaps.reduce(function (a, b) { return a + b; }, 0); }
+  function playerMove(r, take) {
+    if (over || busy || turn !== "you") return;
+    heaps[r] -= take; marked = null; busy = true;
+    sfx.place();
+    say("<b>YOU</b> drained " + take + " from bank " + String.fromCharCode(65 + r) + " \u2192 [" + heaps.join(", ") + "]", true);
+    if (total() === 0) { endRound(false); return; }   // you took the last cell -> you lose
+    turn = "cpu"; draw();
+    setTimeout(aiMove, 620);
+  }
+  function aiMove() {
+    if (over) return;
+    var mv = nimBestMove(heaps);
+    if (!mv) {
+      // losing position: take 1 from the largest heap and hope
+      var best = 0;
+      for (var i = 1; i < heaps.length; i++) if (heaps[i] > heaps[best]) best = i;
+      mv = { row: best, take: 1 };
+    }
+    heaps[mv.row] -= mv.take;
+    sfx.tick();
+    say("<b>ENGINE</b> drained " + mv.take + " from bank " + String.fromCharCode(65 + mv.row) + " \u2192 [" + heaps.join(", ") + "]");
+    if (total() === 0) { endRound(true); return; }    // engine took the last cell -> you win
+    turn = "you"; busy = false; draw();
+  }
+  function endRound(playerWon) {
+    over = true; busy = true; draw();
+    clear(bslot);
+    if (playerWon) {
+      wins++;
+      sfx.good();
+      draw();
+      if (wins >= NIM_TARGET) {
+        bslot.appendChild(winBanner("Streak complete. The engine tripped its own overload twice.", function () { onWin(); closeModal(); }));
+        return;
+      }
+      var a = el("div");
+      var nb = el("button", "btn solid sm", "Next Round \u2192");
+      nb.addEventListener("click", newRound);
+      a.appendChild(nb);
+      bslot.appendChild(banner("win", "\u25A0 ROUND WON", "The engine drained the last cell. " + wins + " of " + NIM_TARGET + " rounds.", a));
+    } else {
+      wins = 0;
+      sfx.bad();
+      draw();
+      var a2 = el("div");
+      var rb = el("button", "btn sm", "Reset Streak");
+      rb.addEventListener("click", newRound);
+      a2.appendChild(rb);
+      bslot.appendChild(banner("fail", "\u25A0 OVERLOAD", "You drained the final cell. Streak reset to zero.", a2));
+    }
+  }
+  newRound();
+  return function () { over = true; };
+}
+
+/* ============================================================
+   LOCK 04 — SIEGE (isolation, alpha-beta engine)
+   ============================================================ */
+var N = 7;
+var DIRS = [[-1,-1],[-1,0],[-1,1],[0,-1],[0,1],[1,-1],[1,0],[1,1]];
+
+function sMoves(burn, from, other) {
+  var out = [], d, i;
+  for (d = 0; d < 8; d++) {
+    var r = from[0], c = from[1];
+    for (i = 1; i < N; i++) {
+      r += DIRS[d][0]; c += DIRS[d][1];
+      if (r < 0 || r >= N || c < 0 || c >= N) break;
+      var k = r * N + c;
+      if (burn[k]) break;
+      if (r === other[0] && c === other[1]) break;
+      out.push([r, c]);
+    }
+  }
+  return out;
+}
+function mountSiege(root, onWin) {
+  var burn, you, cpu, over, turn, legal, thinking, lastCpu = null;
+
+  root.appendChild(rules(
+    "<b>Objective.</b> Both tokens move like a chess queen \u2014 any distance, any of eight directions, never through a burnt square or the other token. " +
+    "The square you leave <b>burns permanently</b>. The first player with no legal move loses. You move first."
+  ));
+
+  var hud = el("div", "hudrow");
+  var sYou = statBox("Your options", "0");
+  var sCpu = statBox("Engine options", "0");
+  var sBurn = statBox("Burnt", "0");
+  hud.appendChild(sYou); hud.appendChild(sCpu); hud.appendChild(sBurn);
+  root.appendChild(hud);
+
+  var bslot = el("div"); root.appendChild(bslot);
+  var wrap = el("div", "siege-wrap"); root.appendChild(wrap);
+  var board = el("div", "sboard"); wrap.appendChild(board);
+  var side = el("div", "sside"); wrap.appendChild(side);
+
+  var legend = el("div", "legend");
+  [["you", "You \u00B7 move like a queen"], ["cpu", "Engine \u00B7 alpha-beta search"], ["burn", "Burnt \u00B7 gone for good"]].forEach(function (p) {
+    var d = el("div");
+    d.appendChild(el("span", "swatch " + p[0]));
+    d.appendChild(el("span", null, p[1]));
+    legend.appendChild(d);
+  });
+  side.appendChild(legend);
+  var think = el("div", "hint", "Glowing squares are your legal moves.");
+  side.appendChild(think);
+  var restart = el("button", "btn sm", "Restart Siege");
+  restart.addEventListener("click", reset);
+  side.appendChild(restart);
+
+  // Openings verified by simulation to be won by strong play and lost by greedy play.
+  var OPENINGS = [ { you: [4, 3], cpu: [0, 3] }, { you: [3, 3], cpu: [0, 0] } ];
+
+  function reset() {
+    var op = OPENINGS[ri(OPENINGS.length)];
+    burn = new Array(N * N).fill(false);
+    you = op.you.slice(); cpu = op.cpu.slice();
+    over = false; turn = "you"; thinking = false; lastCpu = null;
+    clear(bslot);
+    recalc(); draw();
+  }
+  function recalc() { legal = over ? [] : (turn === "you" ? sMoves(burn, you, cpu) : []); }
+  function draw() {
+    var ym = sMoves(burn, you, cpu).length, cm = sMoves(burn, cpu, you).length;
+    sYou.innerHTML = "Your options <b>" + ym + "</b>";
+    sYou.className = "stat" + (ym <= 2 ? " alert" : "");
+    sCpu.innerHTML = "Engine options <b>" + cm + "</b>";
+    sCpu.className = "stat" + (cm <= 2 ? " good" : "");
+    sBurn.innerHTML = "Burnt <b>" + burn.filter(Boolean).length + "</b>";
+    clear(board);
+    for (var r = 0; r < N; r++) for (var c = 0; c < N; c++) {
+      var k = r * N + c;
+      var cls = "sq" + (burn[k] ? " burn" : "");
+      var isLegal = legal && legal.some(function (m) { return m[0] === r && m[1] === c; });
+      if (isLegal) cls += " legal";
+      if (lastCpu && lastCpu[0] === r && lastCpu[1] === c) cls += " lastmove";
+      var sq = el("div", cls);
+      if (r === you[0] && c === you[1]) sq.appendChild(el("div", "tok you", "\u25C6"));
+      else if (r === cpu[0] && c === cpu[1]) sq.appendChild(el("div", "tok cpu", "\u2716"));
+      if (isLegal) {
+        (function (rr, cc) { sq.addEventListener("click", function () { move(rr, cc); }); })(r, c);
+      }
+      board.appendChild(sq);
+    }
+  }
+  function move(r, c) {
+    if (over || thinking || turn !== "you") return;
+    burn[you[0] * N + you[1]] = true;
+    you = [r, c];
+    sfx.place();
+    turn = "cpu"; legal = []; draw();
+    if (sMoves(burn, cpu, you).length === 0) { finish(true); return; }
+    thinking = true;
+    think.textContent = "Engine searching\u2026";
+    setTimeout(function () {
+      var mv = search(burn, cpu, you);
+      burn[cpu[0] * N + cpu[1]] = true;
+      cpu = mv; lastCpu = mv;
+      sfx.tick();
+      thinking = false;
+      think.textContent = "Glowing squares are your legal moves.";
+      turn = "you"; recalc(); draw();
+      if (sMoves(burn, you, cpu).length === 0) finish(false);
+    }, 240);
+  }
+  function finish(playerWon) {
+    over = true; legal = []; draw();
+    clear(bslot);
+    if (playerWon) {
+      sfx.good();
+      bslot.appendChild(winBanner("Engine isolated with zero legal moves. Siege won.", function () { onWin(); closeModal(); }));
+    } else {
+      sfx.bad();
+      var a = el("div");
+      var rb = el("button", "btn sm", "Rematch");
+      rb.addEventListener("click", reset);
+      a.appendChild(rb);
+      bslot.appendChild(banner("fail", "\u25A0 ISOLATED", "You have no legal move left. The board wins this one.", a));
+    }
+  }
+
+  /* --- engine: iterative-deepening alpha-beta on mobility --- */
+  function evaluate(b, me, opp) {
+    var m = sMoves(b, me, opp).length, o = sMoves(b, opp, me).length;
+    if (m === 0) return -1000;
+    return m * 2 - o * 3;
+  }
+  function ab(b, me, opp, depth, alpha, beta, deadline) {
+    var moves = sMoves(b, me, opp);
+    if (moves.length === 0) return -1000 - depth;
+    if (depth === 0 || Date.now() > deadline) return evaluate(b, me, opp);
+    // order by resulting mobility (greedy first)
+    moves.sort(function (x, y) {
+      return sMoves(b, y, opp).length - sMoves(b, x, opp).length;
+    });
+    var best = -Infinity, k = me[0] * N + me[1];
+    b[k] = true;
+    for (var i = 0; i < moves.length; i++) {
+      var sc = -ab(b, opp, moves[i], depth - 1, -beta, -alpha, deadline);
+      if (sc > best) best = sc;
+      if (best > alpha) alpha = best;
+      if (alpha >= beta) break;
+    }
+    b[k] = false;
+    return best;
+  }
+  function search(b, me, opp) {
+    var moves = sMoves(b, me, opp);
+    if (moves.length === 0) return me;
+    var deadline = Date.now() + 120;
+    var best = moves[0], bestScore = -Infinity;
+    var board2 = b.slice();
+    board2[me[0] * N + me[1]] = true;
+    for (var d = 2; d <= 3; d++) {
+      var localBest = null, localScore = -Infinity, timedOut = false;
+      for (var i = 0; i < moves.length; i++) {
+        var sc = -ab(board2, opp, moves[i], d - 1, -Infinity, Infinity, deadline);
+        if (Date.now() > deadline) { timedOut = true; break; }
+        if (sc > localScore) { localScore = sc; localBest = moves[i]; }
+      }
+      if (localBest && !timedOut) { best = localBest; bestScore = localScore; }
+      if (timedOut || bestScore > 500) break;
+    }
+    return best;
+  }
+
+  reset();
+  return function () { over = true; };
+}
+
+/* ============================================================
+   VAULT + BOOT
+   ============================================================ */
+function confetti() {
+  var colors = ["#b14bff", "#8b2ff5", "#41f0b6", "#ffffff", "#ffb02e"];
+  for (var i = 0; i < 90; i++) {
+    (function (i) {
+      setTimeout(function () {
+        var d = el("div", "confetti");
+        d.style.left = Math.random() * 100 + "vw";
+        d.style.background = colors[ri(colors.length)];
+        d.style.animationDuration = (2.4 + Math.random() * 2.2) + "s";
+        d.style.opacity = String(0.55 + Math.random() * 0.45);
+        document.body.appendChild(d);
+        setTimeout(function () { d.remove(); }, 5200);
+      }, i * 22);
+    })(i);
+  }
+}
+function openVault() {
+  $("vaultMsg").textContent = FULL_MESSAGE;
+  $("vaultPhrase").textContent = PHRASE;
+  $("vault").hidden = false;
+  document.body.style.overflow = "hidden";
+  sfx.vault();
+  confetti();
+}
+$("openVault").addEventListener("click", openVault);
+$("vaultClose").addEventListener("click", function () {
+  $("vault").hidden = true;
+  document.body.style.overflow = "";
+});
+$("vaultCopy").addEventListener("click", function () {
+  var btn = this;
+  var done = function () { btn.textContent = "Copied \u2713"; setTimeout(function () { btn.textContent = "Copy Message"; }, 1600); };
+  if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(FULL_MESSAGE).then(done, done);
+  else {
+    var ta = el("textarea"); ta.value = FULL_MESSAGE; document.body.appendChild(ta); ta.select();
+    try { document.execCommand("copy"); } catch (e) {}
+    ta.remove(); done();
+  }
+});
+$("closeBtn").addEventListener("click", closeModal);
+$("overlay").addEventListener("mousedown", function (e) { if (e.target === this) closeModal(); });
+document.addEventListener("keydown", function (e) {
+  if (e.key === "Escape" && !$("overlay").hidden) closeModal();
+});
+$("soundBtn").addEventListener("click", function () {
+  state.sound = !state.sound; save();
+  this.textContent = "Sound: " + (state.sound ? "On" : "Off");
+  if (state.sound) sfx.tick();
+});
+$("soundBtn").textContent = "Sound: " + (state.sound ? "On" : "Off");
+$("resetBtn").addEventListener("click", function () {
+  if (!confirm("Wipe all four locks and start clean?")) return;
+  state.solved = [false, false, false, false];
+  save(); renderAll();
+});
+
+renderAll();
+})();
+</script>
+</body>
+</html>
