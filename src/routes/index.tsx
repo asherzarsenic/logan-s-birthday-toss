@@ -2,6 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useCallback, useEffect, useRef, useState } from "react";
 
 import { Banner } from "@/components/game/Banner";
+import { ConsoleShell } from "@/components/game/ConsoleShell";
 import { Hud } from "@/components/game/Hud";
 import { Knife } from "@/components/game/Knife";
 import { WinCard } from "@/components/game/WinCard";
@@ -386,6 +387,7 @@ function Index() {
         Made with love, glitter and mild personal risk
       </p>
     </main>
+    </ConsoleShell>
   );
 }
 
