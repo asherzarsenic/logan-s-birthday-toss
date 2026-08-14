@@ -2,6 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useCallback, useEffect, useRef, useState } from "react";
 
 import { Banner } from "@/components/game/Banner";
+import { ConsoleShell } from "@/components/game/ConsoleShell";
 import { Hud } from "@/components/game/Hud";
 import { Knife } from "@/components/game/Knife";
 import { WinCard } from "@/components/game/WinCard";
@@ -245,8 +246,9 @@ function Index() {
   const balloonsLeft = balloons.filter((b) => !b.popped).length;
 
   return (
+    <ConsoleShell>
     <main
-      className="scanlines relative flex min-h-[100dvh] w-full flex-col items-center justify-center overflow-hidden bg-stage px-3 py-4"
+      className="scanlines relative flex min-h-full w-full flex-col items-center justify-center overflow-hidden bg-stage px-3 py-4"
       style={{
         background:
           "radial-gradient(ellipse at 50% 42%, color-mix(in oklab, var(--violet) 32%, var(--stage)) 0%, var(--stage) 62%)",
@@ -385,6 +387,7 @@ function Index() {
         Made with love, glitter and mild personal risk
       </p>
     </main>
+    </ConsoleShell>
   );
 }
 
