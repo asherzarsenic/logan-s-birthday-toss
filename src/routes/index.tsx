@@ -245,6 +245,7 @@ function Index() {
   const balloonsLeft = balloons.filter((b) => !b.popped).length;
 
   return (
+    <ConsoleShell>
     <main
       className="scanlines relative flex min-h-full w-full flex-col items-center justify-center overflow-hidden bg-stage px-3 py-4"
       style={{
