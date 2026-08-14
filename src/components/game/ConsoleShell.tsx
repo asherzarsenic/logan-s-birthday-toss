@@ -25,7 +25,7 @@ export function ConsoleShell({ children }: { children: ReactNode }) {
       timers.push(
         window.setTimeout(() => {
           setLines(i + 1);
-          sfx.beep?.();
+          sfx.pop?.();
         }, 260 * i + 420),
       );
     });
